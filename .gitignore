@@ -1,3 +1,4 @@
 *.tfrecords
 *.DESKTOP-NJ473NJ
 *.pkl
+*.npy
