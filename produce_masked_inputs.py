@@ -2,7 +2,6 @@
 import numpy as np
 import time
 import os
-from tflearn.data_augmentation import ImageAugmentation
 import math
 import pickle
 from PIL import Image
@@ -51,7 +50,7 @@ def resize(arr):
             try:
             	cropped_images[i,:,:,j] = imresize(im, (new_height,new_width))
             except ValueError:
-            	print("Found image that has 0 at segmentation, only resizing image without cropping..")
+            	print("Found image that has only 0s at segmentation, only resizing image without cropping..")
             	cropped_images[i,:,:,j] = imresize(arr[i,:,:,j], (new_height,new_width))
 
     return cropped_images
@@ -79,12 +78,15 @@ def splitIntoGroups(no_of_groups):
 
 
 #change these parameters
-input_dir = './train/'
-input_file_format = 'dataTrain_%d.pkl'
+#input_dir = './train/'
+input_dir = './test/'
+#input_file_format = 'dataTrain_%d.pkl'
+input_file_format = 'dataTest_%d.pkl'
 #change this according to the number of files that need to be read
-file_ids = range(1,4)
+#file_ids = range(1,77)
+file_ids = range(1,23)
 
-output_file_format = 'newTrain_%d.pkl'
+output_file_format = 'newTest_%d.pkl'
 
 
 
@@ -131,4 +133,4 @@ for file_name in file_names:
 	#index to store file with different names
 	i += 1
 
-	np.save(os.path.join( input_dir, output_file_format % i), new_data_list)
+	pickle.dump(new_data_list, open(os.path.join( input_dir, output_file_format % i), 'wb'))
