@@ -207,6 +207,7 @@ def main(unused_argv):
 		valid_summary_writer = tf.summary.FileWriter(valid_summary_dir, sess.graph)
 
 		# Create a saver for writing training checkpoints.
+		saver = tf.train.Saver(max_to_keep=5)
 		
 		import matplotlib.pyplot as plt
 		plt.figure()
