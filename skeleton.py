@@ -9,6 +9,8 @@
 # it's best to only consider videos of skeletons with more than 50 frames (discard the rest, interpolate linearly for test set)
 # if there are more than 50 frames per video, use the middle 50 frames (the gesture is most likely to be in there)
 
+
+# gets validation accuracy of around 71%
 # this takes around 35mins to run on my pc
 
 

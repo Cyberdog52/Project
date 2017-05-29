@@ -3,13 +3,12 @@
 # Readme
 #---------------------------------
 
-# This script predicts the classes of the test files only based on the skeletons
+# This script predicts the classes of the test files only based on single frames
 # Assumes that all data is in ./train/ with newTrain_1.pkl until newTrain_76.pkl and in ./test/ with new_Test_1 until new_Train22.pkl
-# If already gridsearched for interpolation kind, random forest tree estimators and depth and if it's better to take the middle frames or stretch them all to a fixed size and then take the middle of the frames
-# it's best to only consider videos of skeletons with more than 50 frames (discard the rest, interpolate linearly for test set)
-# if there are more than 50 frames per video, use the middle 50 frames (the gesture is most likely to be in there)
+# Took model of assignment 2
 
-# this takes around 35mins to run on my pc
+# gets validation accuracy of around 64%
+# this takes around 15mins to run on my pc
 
 
 #---------------------------------
@@ -22,9 +21,15 @@ import os
 import datetime
 import math
 import pickle
-
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import cross_val_score
+import cv2
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tflearn
+from tflearn.data_augmentation import ImageAugmentation
+from tflearn.layers.core import input_data
+import datetime
+import math
+from tensorflow.contrib import learn
+import tensorflow as tf
 
 #---------------------------------
 # Helper methods
@@ -68,27 +73,8 @@ def import_files(file_names, train=True):
 
 
 #---------------------------------
-# Import train data
+# CNN
 #---------------------------------
-
-
-
-
-
-
-import numpy as np
-import time
-import cv2
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-import tflearn
-from tflearn.data_augmentation import ImageAugmentation
-from tflearn.layers.core import input_data
-import datetime
-import math
-import pickle
-from tensorflow.contrib import learn
-import tensorflow as tf
 
 def main(unused_argv):
     
@@ -432,6 +418,7 @@ def conv_model_with_layers_api(input_layer, dropout_rate, mode):
         
         return net
 
+#not used
 def img_aug(batch_samples):
     import random
     from scipy.ndimage import rotate
@@ -468,6 +455,7 @@ def img_aug(batch_samples):
 
     return ret
 
+#not used
 import gc
 def switchData(data_index):
 
@@ -493,7 +481,9 @@ def switchData(data_index):
 
 
 
-
+#---------------------------------
+# Parameters
+#---------------------------------
 
 
 #toggle if you only train on part (True) or if you want to run on whole set (False)
@@ -501,15 +491,24 @@ train = True
 
 learning_rate = 0.0005
 batch_size = 119 
-num_epochs = 30
-print_every_step = 453 #197 #100
-evaluate_every_step = 453 #197 #100
-checkpoint_every_step = 453 #539: data_length / batchsize -> checkpoint after 1 epoch
+num_epochs = 30 #best values got in epoch 28
+print_every_step = 453 
+evaluate_every_step = 453
+checkpoint_every_step = 453 # data_length / batchsize -> checkpoint after 1 epoch
 log_dir = './runs/'
 dropout_rate = 0.75
 
+if not train:
+    batch_size = 119 #nimm auch 119 weil es keinen teiler von 67383 in dieser nähe gibt
+    print_every_step = 566  
+    evaluate_every_step = 999999 #never 
+    checkpoint_every_step = 566 #data_length / batchsize -> checkpoint after 1 epoch
+
 #teiler von 53907
-#1,3,7,17,21,51,119,151,357,453,1057,2567,3171,7701,17969,53907
+#1,3,7,17,21,51,119,151,357,453,1057,2567,3171,7701,17969,53903
+
+#teiler von 67383
+# 1,3,9,7487,22461,67383
 
 
 #change these parameters
@@ -519,6 +518,12 @@ input_file_format = 'newTrain_%d.pkl'
 file_ids = range(1,77)
 
 file_names = [os.path.join( input_dir, input_file_format % i) for i in file_ids]
+
+
+
+#---------------------------------
+# Import data
+#---------------------------------
 		
 #X, y = import_files(file_names, train=train)
 X = np.load('X_single_frame.npy')
@@ -533,16 +538,6 @@ print("y shape: " + str(y.shape))
 # np.save('y_single_frame', y)
 # np.save('X_single_frame', X)
 
-#teiler von 60907
-#  1,7,11,49,77,113,539,791,1243,5537,8701,60907
-
-if not train:
-    batch_size = 131
-    print_every_step = 197  
-    evaluate_every_step = 999999 #never 
-    checkpoint_every_step = 591 #data_length / batchsize -> checkpoint after 1 epoch
-
-
 #decides how many augmentations are coming after X_train0 is used again
 augmentation_factor = 2
 switch_data_every_step = 999999 #never
@@ -553,7 +548,11 @@ switch_data_every_step = 999999 #never
 test_factor = 0.2
 length = X.shape[0]
 test_index = range(0, int(length * test_factor))
-train_index = range(int(length * test_factor), length)
+if train:
+	train_index = range(int(length * test_factor), length)
+else:
+	#use whole data as training set
+	train_index = range(0, length)
 X_train, X_test = X[train_index], X[test_index]
 y_train, y_test = y[train_index], y[test_index]
 
@@ -561,7 +560,9 @@ y_train, y_test = y[train_index], y[test_index]
 del X
 
 
-
+#---------------------------------
+# Start training
+#---------------------------------
 
 print("Xtrain shape: " + str(X_train.shape))
 print("Starting training")
